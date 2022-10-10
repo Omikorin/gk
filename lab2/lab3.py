@@ -21,11 +21,13 @@ def draw_rect(x, y, width, height):
     glVertex2f(x, y)
     glVertex2f(x + width, y)
     glVertex2f(x, y + height)
+    glEnd()
+    
+    glBegin(GL_TRIANGLES)
     glVertex2f(x + width, y)
     glVertex2f(x, y + height)
     glVertex2f(x + width, y + height)
     glEnd()
-    
 
 
 def render(time):

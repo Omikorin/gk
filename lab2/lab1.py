@@ -16,24 +16,26 @@ def shutdown():
     pass
 
 
-def draw_rect(x, y, width, height):
-    glBegin(GL_TRIANGLES)
-    glVertex2f(x, y)
-    glVertex2f(x + width, y)
-    glVertex2f(x, y + height)
-    glVertex2f(x + width, y)
-    glVertex2f(x, y + height)
-    glVertex2f(x + width, y + height)
-    glEnd()
-    
-
-
 def render(time):
     glClear(GL_COLOR_BUFFER_BIT)
 
-    glColor3f(1.0, 1.0, 0.0)
+    glColor3f(0.0, 1.0, 0.0)
+    glBegin(GL_TRIANGLES)
+    glVertex2f(0.0, 0.0)
+    glColor3f(0.0, 0.0, 1.0)
+    glVertex2f(0.0, 50.0)
+    glColor3f(0.5, 0.5, 0.0)
+    glVertex2f(50.0, 0.0)
+    glEnd()
 
-    draw_rect(0.0, 0.0, 50.0, -75.0)
+    glColor3f(1.0, 0.0, 0.0)
+    glBegin(GL_TRIANGLES)
+    glVertex2f(0.0, 0.0)
+    glColor3f(0.5, 1.0, 0.5)
+    glVertex2f(0.0, 50.0)
+    glColor3f(0.5, 0.5, 1.0)
+    glVertex2f(-50.0, 0.0)
+    glEnd()
 
     glFlush()
 
