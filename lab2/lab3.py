@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import random
 import sys
 
 from glfw.GLFW import *
@@ -8,6 +9,7 @@ from OpenGL.GLU import *
 
 
 def startup():
+    random.seed()
     update_viewport(None, 400, 400)
     glClearColor(0.5, 0.5, 0.5, 1.0)
 
@@ -16,26 +18,31 @@ def shutdown():
     pass
 
 
-def draw_rect(x, y, width, height):
+def draw_rect(x, y, width, height, color, deformation = None):
+    if (deformation is None):
+        deformation = 0.0
+
+    x += deformation
+    y += deformation
+    width += deformation
+    height += deformation
+
+    glColor3f(color, color, color)
+    
     glBegin(GL_TRIANGLES)
     glVertex2f(x, y)
     glVertex2f(x + width, y)
     glVertex2f(x, y + height)
-    glEnd()
-    
-    glBegin(GL_TRIANGLES)
     glVertex2f(x + width, y)
     glVertex2f(x, y + height)
     glVertex2f(x + width, y + height)
     glEnd()
 
 
-def render(time):
+def render(time, color):
     glClear(GL_COLOR_BUFFER_BIT)
 
-    glColor3f(1.0, 1.0, 0.0)
-
-    draw_rect(0.0, 0.0, 50.0, -75.0)
+    draw_rect(0.0, 0.0, 50.0, -75.0, color, 5.0)
 
     glFlush()
 
@@ -75,9 +82,11 @@ def main():
     glfwSetFramebufferSizeCallback(window, update_viewport)
     glfwSwapInterval(1)
 
+    color = random.random()
+
     startup()
     while not glfwWindowShouldClose(window):
-        render(glfwGetTime())
+        render(glfwGetTime(), color)
         glfwSwapBuffers(window)
         glfwPollEvents()
     shutdown()
