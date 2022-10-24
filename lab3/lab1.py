@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import math
+import numpy
 import sys
 
 from glfw.GLFW import *
@@ -15,6 +17,32 @@ def startup():
 
 def shutdown():
     pass
+
+
+def x_axis(u, v):
+    u2 = u * u
+    u3 = u2 * u
+    u4 = u3 * u
+    u5 = u4 * u
+
+    return (-90 * u5 + 225 * u4 - 270 * u3 + 180 * u ** 2 - 45 * u) * numpy.cos(numpy.pi * v)
+
+
+def y_axis(u):
+    u2 = u * u
+    u3 = u2 * u
+    u4 = u3 * u
+
+    return 160 * u4 - 320 * u3 + 160 * u2 - 5
+
+
+def z_axis(u, v):
+    u2 = u * u
+    u3 = u2 * u
+    u4 = u3 * u
+    u5 = u4 * u
+
+    return (-90 * u5 + 225 * u4 - 270 * u3 + 180 * u2 - 45 * u) * numpy.sin(numpy.pi * v)
 
 
 def axes():
@@ -34,12 +62,27 @@ def axes():
 
     glEnd()
 
+def spin(angle):
+    glRotatef(angle, 1.0, 0.0, 0.0)
+    glRotatef(angle, 0.0, 1.0, 0.0)
+    glRotatef(angle, 0.0, 0.0, 1.0)
 
 def render(time):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
 
     axes()
+
+    # spin(time * 180 / 3.1415)
+
+    glBegin(GL_POINTS)
+
+    for x in range(N):
+        for y in range(N): 
+            glVertex(points[x][y])
+    
+    glEnd()
+
 
     glFlush()
 
@@ -78,6 +121,19 @@ def main():
     glfwSwapInterval(1)
 
     startup()
+
+    global N
+    global points
+
+    N = 100
+    points = numpy.zeros((N, N, 3))
+
+    for x in range(N):
+        for y in range(N):
+            points[x][y][0] = x_axis(x / N, y / N) 
+            points[x][y][1] = y_axis(x / N) 
+            points[x][y][2] = z_axis(x / N, y / N) 
+
     while not glfwWindowShouldClose(window):
         render(glfwGetTime())
         glfwSwapBuffers(window)
