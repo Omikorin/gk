@@ -23,16 +23,32 @@ pix2scale = 0.05
 scale = 1.0
 R = 10.0
 
-up_camera = 1.0
+up_x = 0.0
+up_y = 1.0
+up_z = 0.0
+
+at_x = 0.0
+at_y = 0.0
+at_z = 0.0
+
+shift_x = 0.0
+shift_y = 0.0
+shift_z = 0.0
 
 left_mouse_button_pressed = 0
-right_mouse_button_pressed = 0
 mouse_x_pos_old = 0
 delta_x = 0
 mouse_y_pos_old = 0
 delta_y = 0
 
-mode = 0
+w_pressed = False
+a_pressed = False
+s_pressed = False
+d_pressed = False
+
+move_speed = 0.05
+
+
 
 def startup():
     update_viewport(None, 400, 400)
@@ -109,60 +125,114 @@ def calc_eye_z(R, theta, phi):
     return R * numpy.sin(theta * numpy.pi / 180) * numpy.cos(phi * numpy.pi / 180)
 
 
+def piramid(x, y, z, a):
+    half = a
+
+    # rectangle
+    glBegin(GL_TRIANGLE_FAN)
+    glColor3f(1.0, 0.5, 0.8)
+    glVertex3f(x - half, y - half, z - half)
+    glVertex3f(half + x, y - half, z - half)
+    glVertex3f(half + x, y - half, z + half)
+    glVertex3f(x - half, y - half, z + half)
+    glEnd()
+
+    # walls
+    glBegin(GL_TRIANGLE_FAN)
+    glColor3f(0.5, 0.7, 0.8)
+    glVertex3f(x, half + y, z)
+    glVertex3f(x - half, y - half, z - half)
+    glVertex3f(half + x, y - half, z - half)
+    glVertex3f(half + x, y - half, z + half)
+    glVertex3f(x - half, y - half, z + half)
+    glVertex3f(x - half, y - half, z - half)
+    glEnd()
+
+
+def sierpinski_piramid(x, y, z, iterations, length):
+    half = length / 2
+
+    if iterations > 1:
+        sierpinski_piramid(x - half, y - half, z - half, iterations - 1, half)
+        sierpinski_piramid(x + half, y - half, z - half, iterations - 1, half)
+        sierpinski_piramid(x - half, y - half, z + half, iterations - 1, half)
+        sierpinski_piramid(x + half, y - half, z + half, iterations - 1, half)
+        sierpinski_piramid(x, y + half, z, iterations - 1, half)
+    else:
+        piramid(x, y, z, length)
+
+
+def update_movement(x, y, z):
+    global w_pressed, s_pressed, a_pressed, d_pressed
+    global shift_x, shift_y, shift_z
+    global move_speed
+
+    if w_pressed:
+        shift_x -= x * move_speed
+        shift_y -= y * move_speed
+        shift_z -= z * move_speed
+    
+    if s_pressed:
+        shift_x += x * move_speed
+        shift_y += y * move_speed
+        shift_z += z * move_speed
+
+    if a_pressed:
+        shift_x -= (up_y * z - up_z * y) * move_speed
+        shift_y -= (up_z * x - up_x * z) * move_speed
+        shift_z -= (up_x * y - up_y * x) * move_speed
+
+    if d_pressed:
+        shift_x += (up_y * z - up_z * y) * move_speed
+        shift_y += (up_z * x - up_x * z) * move_speed
+        shift_z += (up_x * y - up_y * x) * move_speed
+
+
 def render(time):
     global theta
     global phi
     global scale
     global R
 
-    global eye_x
-    global eye_y
-    global eye_z
-
-    global up_camera
+    global eye_x, eye_y, eye_z
+    global up_x, up_y, up_z
+    global at_x, at_y, at_z
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
-
-    gluLookAt(eye_x, eye_y, eye_z,
-            0.0, 0.0, 0.0, 0.0, up_camera, 0.0)
 
     if left_mouse_button_pressed:
         theta += delta_x * pix2angle
         phi += delta_y * pix2angle
 
-    if right_mouse_button_pressed:
-        if mode == 0:
-            scale += delta_x * pix2scale
-            scale += delta_y * pix2scale
-        elif mode == 1:
-            R += delta_x * pix2scale
-            R += delta_y * pix2scale
-
-    if theta < 0 or theta > 360:
+    if theta < 0 or theta >= 360:
         theta %= 360
 
-    if phi < 0 or phi > 360:
+    if phi < 0 or phi >= 360:
         phi %= 360
 
-    if mode == 1:
-        if phi > 90 and phi < 270:
-            up_camera = -1
-        else:
-            up_camera = 1
 
-    if mode == 0:
-        glRotatef(theta, 0.0, 1.0, 0.0)
-        glRotatef(phi, 1.0, 0.0, 0.0)
-        glScalef(scale, scale, scale)
-    elif mode == 1:
-        eye_x = calc_eye_x(R, theta, phi)
-        eye_y = calc_eye_y(R, theta, phi)
-        eye_z = calc_eye_z(R, theta, phi)
+    if phi > 90 and phi < 270:
+        up_y = -1.0
+    else:
+        up_y = 1.0
 
+    eye_x = calc_eye_x(R, theta, phi)
+    eye_y = calc_eye_y(R, theta, phi)
+    eye_z = calc_eye_z(R, theta, phi)
+
+    x = at_x - eye_x
+    y = at_y - eye_y
+    z = at_z - eye_z
+
+    update_movement(x, y, z)
+
+    gluLookAt(eye_x, eye_y, eye_z, at_x, at_y, at_z, up_x, up_y, up_z)
+
+    glTranslate(shift_x, shift_y, shift_z)
 
     axes()
-    example_object()
+    sierpinski_piramid(0, 0, 0, 3, 5.0)
 
     glFlush()
 
@@ -186,18 +256,37 @@ def update_viewport(window, width, height):
 
 
 def keyboard_key_callback(window, key, scancode, action, mods):
-    global mode
-    # global viewer
+    global w_pressed
+    global s_pressed
+    global a_pressed
+    global d_pressed
 
     if key == GLFW_KEY_ESCAPE and action == GLFW_PRESS:
         glfwSetWindowShouldClose(window, GLFW_TRUE)
-    elif key == GLFW_KEY_SPACE and action == GLFW_PRESS:
-        mode = not mode
 
-        # if mode == 0:
-        #     viewer[0] = eye_x
-        #     viewer[1] = eye_y
-        #     viewer[2] = eye_z
+    if key == GLFW_KEY_W and (action == GLFW_PRESS or action == GLFW_REPEAT):
+        w_pressed = True
+
+    if key == GLFW_KEY_W and action == GLFW_RELEASE:
+        w_pressed = False
+
+    if key == GLFW_KEY_S and (action == GLFW_PRESS or action == GLFW_REPEAT):
+        s_pressed = True
+
+    if key == GLFW_KEY_S and action == GLFW_RELEASE:
+        s_pressed = False
+
+    if key == GLFW_KEY_A and (action == GLFW_PRESS or action == GLFW_REPEAT):
+        a_pressed = True
+
+    if key == GLFW_KEY_A and action == GLFW_RELEASE:
+        a_pressed = False
+
+    if key == GLFW_KEY_D and (action == GLFW_PRESS or action == GLFW_REPEAT):
+        d_pressed = True
+
+    if key == GLFW_KEY_D and action == GLFW_RELEASE:
+        d_pressed = False
 
 
 def mouse_motion_callback(window, x_pos, y_pos):
@@ -216,17 +305,11 @@ def mouse_motion_callback(window, x_pos, y_pos):
 
 def mouse_button_callback(window, button, action, mods):
     global left_mouse_button_pressed
-    global right_mouse_button_pressed
 
     if button == GLFW_MOUSE_BUTTON_LEFT and action == GLFW_PRESS:
         left_mouse_button_pressed = 1
     else:
         left_mouse_button_pressed = 0
-    
-    if button == GLFW_MOUSE_BUTTON_RIGHT and action == GLFW_PRESS:
-        right_mouse_button_pressed = 1
-    else:
-        right_mouse_button_pressed = 0
 
 
 def main():
